@@ -1,0 +1,1 @@
+node ../jade-to-static ./srcpath ./outpath 3000

@@ -1,16 +1,44 @@
 #!/usr/bin/env node
+var args = process.argv.slice(2)
+
+process.chdir(__dirname)
+
+if (args.length != 3) {
+  return console.log(require('./print-help'))
+}
+
+try {
+
 var fs = require('fs')
   , http = require('http')
   , jade = require('jade')
   , static = require('node-static')
   , pathUtil =require('path')
-  , jadeRe = /\.jade$/
-  , path = process.argv.slice(2)[0]
-  , port = parseInt(process.argv.slice(2)[1]) || 8080
-  , fileServer = new static.Server(path || '.')
+  , srcpath = pathUtil.resolve(args[0])
+  , outpath = pathUtil.resolve(args[1])
+  , port = parseInt(args[2]) || 8080
+  , fileServer = new static.Server(outpath || '.')
 
-if (path)
-  process.chdir(pathUtil.resolve(path));
+process.chdir(outpath)
+
+var jadeFiles = require('recursive-readdir')(srcpath, ['*.extend.jade', '*.include.jade'], function (err, files) {
+  // Files is an array of filename 
+  console.log(files);
+});
+
+} catch (error) {
+  return console.log(require('./print-help'))
+}
+/*
+try {
+  jade.renderFile('.' + req.url, {
+  filename: '.' + req.url.replace(jadeRe, ''),
+  pretty: true
+  })
+} catch (parseError) {
+  console.error(parseError)
+}
+*/
 
 fileServer.serveDir = function (pathname, req, res, finish) {
   fs.readdir(pathname, function(err, results) {
@@ -24,19 +52,7 @@ fileServer.serveDir = function (pathname, req, res, finish) {
 }
 
 http.createServer(function (req, res) {
-  if (req.url.match(jadeRe)) {
-    res.writeHead(200, {'Content-Type': 'text/html'})
-    try {
-      res.end(jade.renderFile('.' + req.url, {
-        filename: '.' + req.url.replace(jadeRe, ''),
-        pretty: true
-      }))
-    } catch (parseError) {
-      res.end('<pre>' + parseError + '</pre>')
-    }
-  } else {
-    req.addListener('end', function () {
-      fileServer.serve(req, res)
-    }).resume()
-  }
+  req.addListener('end', function () {
+    fileServer.serve(req, res)
+  }).resume()
 }).listen(port)
