@@ -12,17 +12,33 @@ var fs = require('fs')
   , jadeIgnores = /\.(include|extend)\.jade$/
   , port = parseInt(argv.port) || 8080
   , fileServer = new static.Server(outpath || '.')
+  , cson = require("./cson")
 
 process.chdir(outpath)
 
+var buildLocals = function (jadeString, filename) {
+  // This regex matches the form: //-someVar = require("../some-file.cson")
+  // and tries to read that given file as JSON or CSON
+  var RE = /\/\/\-(\w+)\s*=\s*require\(['"]([^'"]+)['"]\)/g;
+  var match
+  var locals = {}
+  while (match = RE.exec(jadeString), match != null) {
+    var requiredFile = pathUtil.resolve(pathUtil.dirname(filename), match[2])
+    locals[match[1]] = cson.parse(fs.readFileSync(requiredFile, "utf8"))
+  }
+  return locals
+}
+
 function renderJade (filename, outfilename) {
   try {
+    var jadeContents = fs.readFileSync(filename, "utf8")
+    var locals = buildLocals(jadeContents, filename)
+    
+    locals.filename = filename.replace(jadeRe, '')
+    locals.pretty = true
     fs.writeFileSync(
       outfilename,
-      jade.renderFile(filename, {
-        filename: filename.replace(jadeRe, ''),
-        pretty: true
-      })
+      jade.renderFile(filename, locals)
     )
     console.log("Wrote: " + outfilename)
   } catch (error) {
@@ -35,7 +51,7 @@ var allJadeFiles = null;
 
 function watchForCompile (filename, outfilename) {
   fs.watch(filename, function () {
-    if (jadeIgnores.exec(filename)) {
+    if (!jadeRe.exec(filename) || jadeIgnores.exec(filename)) {
       for (var i = 0; i < allJadeFiles.length; i++) {
         renderJade(allJadeFiles[i].in, allJadeFiles[i].out)
       }
@@ -62,7 +78,7 @@ require('recursive-readdir')(srcpath, function (err, files) {
       filename = files[i];
       outfilename = filename.replace(srcpath, outpath).replace(jadeRe, ".html");
       watchForCompile(filename, outfilename)
-      if (!jadeIgnores.exec(filename))
+      if (!jadeIgnores.exec(filename) && jadeRe.exec(filename))
         renderJade(filename, outfilename)
     } catch (error) {
       console.log(error)

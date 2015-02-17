@@ -1,7 +1,7 @@
 {
   "name": "jade-to-static",
   "description": "a jade file compiler for statically made websites.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "bin": "./jade-to-static.js",
   "preferGlobal": "true",
   "author": "Cole Lawrence (@ZombieHippie)",
@@ -13,6 +13,7 @@
     "node-static": "0.7.x",
     "recursive-readdir": "1.2.x",
     "jade": "1.4.x",
-    "yargs": "3.0.4"
+    "yargs": "3.0.4",
+    "coffee-script": "1.9.x"
   }
 }
