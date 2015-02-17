@@ -12,6 +12,7 @@
   "dependencies": {
     "node-static": "0.7.x",
     "recursive-readdir": "1.2.x",
-    "jade": "1.4.x"
+    "jade": "1.4.x",
+    "yargs": "3.0.4"
   }
 }

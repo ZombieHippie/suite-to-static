@@ -1,22 +1,17 @@
 #!/usr/bin/env node
-var args = process.argv.slice(2)
-
 process.chdir(__dirname)
-
-if (args.length != 3) {
-  return console.log(require('./print-help'))
-}
 
 try {
 
 var fs = require('fs')
+  , argv = require('yargs').argv
   , http = require('http')
   , jade = require('jade')
   , static = require('node-static')
   , pathUtil =require('path')
-  , srcpath = pathUtil.resolve(args[0])
-  , outpath = pathUtil.resolve(args[1])
-  , port = parseInt(args[2]) || 8080
+  , srcpath = pathUtil.resolve(argv.in)
+  , outpath = pathUtil.resolve(argv.out)
+  , port = parseInt(argv.port) || 8080
   , fileServer = new static.Server(outpath || '.')
 
 process.chdir(outpath)
@@ -29,6 +24,7 @@ var jadeFiles = require('recursive-readdir')(srcpath, ['*.extend.jade', '*.inclu
 } catch (error) {
   return console.log(require('./print-help'))
 }
+
 /*
 try {
   jade.renderFile('.' + req.url, {
