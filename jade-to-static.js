@@ -9,30 +9,67 @@ var fs = require('fs')
   , srcpath = pathUtil.resolve(argv.in)
   , outpath = pathUtil.resolve(argv.out)
   , jadeRe = /\.jade$/
+  , jadeIgnores = /\.(include|extend)\.jade$/
   , port = parseInt(argv.port) || 8080
   , fileServer = new static.Server(outpath || '.')
 
 process.chdir(outpath)
 
-var jadeFiles = require('recursive-readdir')(srcpath, ['*.extend.jade', '*.include.jade'], function (err, files) {
-  // Files is an array of filename 
-  for (var i = 0, filename, outfilename; i < files.length; i++) {
+function renderJade (filename, outfilename) {
+  try {
+    fs.writeFileSync(
+      outfilename,
+      jade.renderFile(filename, {
+        filename: filename.replace(jadeRe, ''),
+        pretty: true
+      })
+    )
+    console.log("Wrote: " + outfilename)
+  } catch (error) {
+    console.error("Jade Error: ")
+    console.error(error)
+  }
+}
+
+var allJadeFiles = null;
+
+function watchForCompile (filename, outfilename) {
+  fs.watch(filename, function () {
+    if (jadeIgnores.exec(filename)) {
+      for (var i = 0; i < allJadeFiles.length; i++) {
+        renderJade(allJadeFiles[i].in, allJadeFiles[i].out)
+      }
+    } else {
+      renderJade(filename, outfilename)
+    }
+  })
+}
+
+// Read `in` directory recursively
+require('recursive-readdir')(srcpath, function (err, files) {
+  allJadeFiles = files.filter(function (element) {
+    return !element.match(jadeIgnores)
+  }).map(function (originalName) {
+    return {
+      in : originalName,
+      out: originalName.replace(srcpath, outpath).replace(jadeRe, ".html")
+    }
+  })
+
+  // Files is an array of filename
+  for (var i = 0; i < files.length; i++) {
     try {
       filename = files[i];
       outfilename = filename.replace(srcpath, outpath).replace(jadeRe, ".html");
-      fs.writeFileSync(
-        outfilename,
-        jade.renderFile(filename, {
-          filename: filename.replace(jadeRe, ''),
-          pretty: true
-        })
-      )
-      console.log("Wrote: " + outfilename)
+      watchForCompile(filename, outfilename)
+      if (!jadeIgnores.exec(filename))
+        renderJade(filename, outfilename)
     } catch (error) {
       console.log(error)
     }
   }
-});
+})
+
 
 fileServer.serveDir = function (pathname, req, res, finish) {
   fs.readdir(pathname, function(err, results) {
