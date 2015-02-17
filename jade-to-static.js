@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-process.chdir(__dirname)
-
-try {
 
 var fs = require('fs')
   , argv = require('yargs').argv
@@ -11,6 +8,7 @@ var fs = require('fs')
   , pathUtil =require('path')
   , srcpath = pathUtil.resolve(argv.in)
   , outpath = pathUtil.resolve(argv.out)
+  , jadeRe = /\.jade$/
   , port = parseInt(argv.port) || 8080
   , fileServer = new static.Server(outpath || '.')
 
@@ -18,23 +16,23 @@ process.chdir(outpath)
 
 var jadeFiles = require('recursive-readdir')(srcpath, ['*.extend.jade', '*.include.jade'], function (err, files) {
   // Files is an array of filename 
-  console.log(files);
+  for (var i = 0, filename, outfilename; i < files.length; i++) {
+    try {
+      filename = files[i];
+      outfilename = filename.replace(srcpath, outpath).replace(jadeRe, ".html");
+      fs.writeFileSync(
+        outfilename,
+        jade.renderFile(filename, {
+          filename: filename.replace(jadeRe, ''),
+          pretty: true
+        })
+      )
+      console.log("Wrote: " + outfilename)
+    } catch (error) {
+      console.log(error)
+    }
+  }
 });
-
-} catch (error) {
-  return console.log(require('./print-help'))
-}
-
-/*
-try {
-  jade.renderFile('.' + req.url, {
-  filename: '.' + req.url.replace(jadeRe, ''),
-  pretty: true
-  })
-} catch (parseError) {
-  console.error(parseError)
-}
-*/
 
 fileServer.serveDir = function (pathname, req, res, finish) {
   fs.readdir(pathname, function(err, results) {

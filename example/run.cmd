@@ -1,1 +1,1 @@
-node ../jade-to-static -cwh -i ./srcpath -o ./outpath --port=3000
+node ../jade-to-static --in=./srcpath --out=./outpath --port=3000
