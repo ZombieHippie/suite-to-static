@@ -1,7 +1,7 @@
 {
   "name": "jade-to-static",
   "description": "a jade file compiler for statically made websites.",
-  "version": "0.1.0",
+  "version": "0.1.0-1",
   "bin": "./jade-to-static.js",
   "preferGlobal": "true",
   "author": "Cole Lawrence (@ZombieHippie)",

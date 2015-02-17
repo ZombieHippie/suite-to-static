@@ -64,7 +64,7 @@ function watchForCompile (filename, outfilename) {
 // Read `in` directory recursively
 require('recursive-readdir')(srcpath, function (err, files) {
   allJadeFiles = files.filter(function (element) {
-    return !element.match(jadeIgnores)
+    return !element.match(jadeIgnores) && element.match(jadeRe)
   }).map(function (originalName) {
     return {
       in : originalName,
