@@ -11,7 +11,7 @@ exports.parse = function (src, isJson) {
       result = vm.runInNewContext(src)
     } catch (err) {
       // throw error for tree
-      result = coffee.eval(src, { sandbox:true })
+      result = coffee.eval(src, { sandbox: {} })
     }
   }
   return result
