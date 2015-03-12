@@ -10,11 +10,14 @@ var fs = require('fs')
   , outpath = pathUtil.resolve(argv.out)
   , jadeRe = /\.jade$/
   , jadeIgnores = /\.(include|extend)\.jade$/
+  , requiredFileRE = /\.(json|cson)$/
   , port = parseInt(argv.port) || 8080
   , fileServer = new static.Server(outpath || '.')
   , cson = require("./cson")
 
 process.chdir(outpath)
+
+parsedFiles = {}
 
 var buildLocals = function (jadeString, filename) {
   // This regex matches the form: //-someVar = require("../some-file.cson")
@@ -24,7 +27,9 @@ var buildLocals = function (jadeString, filename) {
   var locals = {}
   while (match = RE.exec(jadeString), match != null) {
     var requiredFile = pathUtil.resolve(pathUtil.dirname(filename), match[2])
-    locals[match[1]] = cson.parse(fs.readFileSync(requiredFile, "utf8"))
+    if (parsedFiles[requiredFile] == null)
+      parsedFiles[requiredFile] = cson.parse(fs.readFileSync(requiredFile, "utf8"))
+    locals[match[1]] = parsedFiles[requiredFile]
   }
   return locals
 }
@@ -49,15 +54,30 @@ function renderJade (filename, outfilename) {
 
 var allJadeFiles = null;
 
+function handleFileChange (filename, outfilename) {
+  console.log("Handle file change: " + filename)
+  var isNotJadeFile = !jadeRe.exec(filename)
+  var isExtendOrIncludeJadeFile = jadeIgnores.exec(filename) 
+  if (isNotJadeFile || isExtendOrIncludeJadeFile) {
+    var isRequiredFile = requiredFileRE.exec(filename)
+    if (isRequiredFile) {
+      // reset parsed file
+      parsedFiles[filename] = null
+    }
+    for (var i = 0; i < allJadeFiles.length; i++) {
+      renderJade(allJadeFiles[i].in, allJadeFiles[i].out)
+    }
+  } else {
+    renderJade(filename, outfilename)
+  }
+}
+
+var timeout = null;
 function watchForCompile (filename, outfilename) {
   fs.watch(filename, function () {
-    if (!jadeRe.exec(filename) || jadeIgnores.exec(filename)) {
-      for (var i = 0; i < allJadeFiles.length; i++) {
-        renderJade(allJadeFiles[i].in, allJadeFiles[i].out)
-      }
-    } else {
-      renderJade(filename, outfilename)
-    }
+    if (timeout != null)
+      clearTimeout(timeout)
+    timeout = setTimeout(handleFileChange, 200, filename, outfilename)
   })
 }
 
