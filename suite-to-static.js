@@ -65,6 +65,7 @@ function renderCoffee (filename, outfilename) {
         outfilename,
         js
       )
+      console.log("Wrote: " + outfilename)
     }
   })
 }
@@ -80,6 +81,7 @@ function renderStylus (filename, outfilename) {
         outfilename,
         css
       )
+      console.log("Wrote: " + outfilename)
     }
   })
 }
