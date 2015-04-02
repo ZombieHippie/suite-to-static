@@ -5,7 +5,7 @@ var Stylus = require('stylus')
 // })
 
 exports.compile = function (stylusCode, filename, callback) {
-  stylus(stylusCode)
+  Stylus(stylusCode)
   .set('filename', filename)
   .render(function (err, cssString) {
     // TODO alphabetizing cssString
