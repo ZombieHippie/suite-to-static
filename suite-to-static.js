@@ -6,7 +6,6 @@ var fs = require('fs')
   , jade = require('jade')
   , stylusCompiler = require('./stylus-compiler')
   , coffeeCompiler = require('./coffee-script-compiler')
-  , static = require('node-static')
   , pathUtil =require('path')
   , srcpath = pathUtil.resolve(argv.in)
   , outpath = pathUtil.resolve(argv.out)
@@ -14,8 +13,11 @@ var fs = require('fs')
   , jadeIgnores = /\.(include|extend)\.jade$/
   , requiredFileRE = /\.(json|cson)$/
   , port = parseInt(argv.port) || 8080
-  , fileServer = new static.Server(outpath || '.')
   , cson = require("./cson")
+
+var fileServer = null
+if (!argv.noserver)
+  fileServer = (new require('node-static')).Server(outpath || '.')
 
 process.chdir(outpath)
 
@@ -167,20 +169,21 @@ require('recursive-readdir')(srcpath, function (err, files) {
   }
 })
 
+if (fileServer) {
+  fileServer.serveDir = function (pathname, req, res, finish) {
+    fs.readdir(pathname, function(err, results) {
+      res.writeHead(200, {'Content-Type': 'text/html'})
+      res.end(jade.render('pre\n if pathname.length\n  a(href="../") ..\n  br\n each file in results\n  a(href=pathname+"\/"+file)=file\n  br', {
+        results: results,
+        pathname: req.url.length === 1 ? '' : req.url
+      }))
+      finish(200, {})
+    })
+  }
 
-fileServer.serveDir = function (pathname, req, res, finish) {
-  fs.readdir(pathname, function(err, results) {
-    res.writeHead(200, {'Content-Type': 'text/html'})
-    res.end(jade.render('pre\n if pathname.length\n  a(href="../") ..\n  br\n each file in results\n  a(href=pathname+"\/"+file)=file\n  br', {
-      results: results,
-      pathname: req.url.length === 1 ? '' : req.url
-    }))
-    finish(200, {})
-  })
+  http.createServer(function (req, res) {
+    req.addListener('end', function () {
+      fileServer.serve(req, res)
+    }).resume()
+  }).listen(port)
 }
-
-http.createServer(function (req, res) {
-  req.addListener('end', function () {
-    fileServer.serve(req, res)
-  }).resume()
-}).listen(port)
