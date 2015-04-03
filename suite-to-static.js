@@ -16,7 +16,7 @@ var fs = require('fs')
   , cson = require("./cson")
 
 var fileServer = null
-if (!argv.noserver)
+if (argv.noserver == null)
   fileServer = (new require('node-static')).Server(outpath || '.')
 
 process.chdir(outpath)
