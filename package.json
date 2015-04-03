@@ -1,7 +1,7 @@
 {
   "name": "suite-to-static",
   "description": "a jade file compiler for statically made websites.",
-  "version": "0.0.2",
+  "version": "0.0.2-1",
   "bin": "./suite-to-static.js",
   "preferGlobal": "true",
   "author": "Cole Lawrence (@ZombieHippie)",

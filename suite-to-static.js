@@ -16,8 +16,10 @@ var fs = require('fs')
   , cson = require("./cson")
 
 var fileServer = null
-if (argv.noserver == null)
-  fileServer = (new require('node-static')).Server(outpath || '.')
+if (argv.noserver == null) {
+  var StaticServer = require('node-static')
+  fileServer = new StaticServer.Server(outpath || '.')
+}
 
 process.chdir(outpath)
 
@@ -169,7 +171,7 @@ require('recursive-readdir')(srcpath, function (err, files) {
   }
 })
 
-if (fileServer) {
+if (fileServer != null) {
   fileServer.serveDir = function (pathname, req, res, finish) {
     fs.readdir(pathname, function(err, results) {
       res.writeHead(200, {'Content-Type': 'text/html'})
@@ -186,4 +188,5 @@ if (fileServer) {
       fileServer.serve(req, res)
     }).resume()
   }).listen(port)
+  console.log("listening")
 }
